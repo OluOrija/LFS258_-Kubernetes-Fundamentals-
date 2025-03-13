@@ -1,0 +1,12 @@
+---create cluster---
+gcloud container clusters create lfs258
+
+gcloud container clusters list
+
+kubectl get nodes
+
+
+
+
+---delete cluster---
+gcloud container clusters delete lfs258
