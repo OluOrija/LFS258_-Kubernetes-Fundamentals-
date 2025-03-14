@@ -1,0 +1,79 @@
+---install kubernetes---
+
+...become root and update and upgrade the system
+sudo -i
+apt-get update && apt-get upgrade -y
+
+...install packages
+apt install apt-transport-https software-properties-common ca-certificates tree socat -y
+
+...disable swap if not already done
+swapoff -a
+
+... load modules to ensure they are available for following steps
+modprobe overlay
+modprobe br_netfilter
+
+...update kernel networking to allow necessary traffic
+cat << EOF | tee /etc/sysctl.d/kubernetes.conf 
+net.bridge.bridge-nf-call-ip6tables = 1 
+net.bridge.bridge-nf-call-iptables = 1 
+net.ipv4.ip_forward = 1 
+EOF
+
+...ensure changes are used by the current kernel as well
+sysctl --system
+
+...install the necessary key for the software to install
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+...Install the containerd software
+apt-get update &&  apt-get install containerd.io -y
+containerd config default | tee /etc/containerd/config.toml
+sed -e 's/SystemdCgroup = false/SystemdCgroup = true/g' -i /etc/containerd/config.toml
+systemctl restart containerd
+
+...Download the public signing key for the Kubernetes package repositories
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+...Add the appropriate Kubernetes apt repository
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+...Update the new repo declared
+apt-get update
+
+...Install the kubernetes software
+apt-get install -y kubeadm=1.31.1-1.1 kubelet=1.31.1-1.1 kubectl=1.31.1-1.1
+apt-mark hold kubelet kubeadm kubectl
+
+--- On the CP node ---
+...Find the IP address of the primary interface of the cp server
+hostname -i
+{
+    cp1 - 10.154.0.10
+    wn1 - 10.154.0.11
+}
+
+--- On worker node ---
+...Add dns entry for cp node to hosts file
+vim /etc/hosts
+
+--- On the CP node ---
+...generate token on control plane node
+sudo kubeadm token create --print-join-command
+
+{
+    wn1 : kubeadm join k8scp:6443 --token daakj0.jipeb0ytkrf3wtij --discovery-token-ca-cert-hash sha256:ca87e55b7af8548644df8374258d3b707c002021bac11deb483ecc705f628998 --node-name=worker
+    wn2 : kubeadm join k8scp:6443 --token daakj0.jipeb0ytkrf3wtij --discovery-token-ca-cert-hash sha256:ca87e55b7af8548644df8374258d3b707c002021bac11deb483ecc705f628998 --node-name=worker2
+}
+
+--- On worker node ---
+
+exit 
+
+kubectl get nodes
+
+ls -l .kube

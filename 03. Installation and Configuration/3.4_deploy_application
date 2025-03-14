@@ -1,0 +1,87 @@
+...create a new deployment and verify it is running
+kubectl create deployment nginx --image=nginx
+kubectl get deployments
+
+...view details of the deployment
+kubectl describe deployment nginx
+
+...view basic steps the cluster took in order to pall and deploy the new application
+kubectl get events
+
+...view in yaml format
+kubectl get deployment nginx -o yaml
+
+kubectl get deployment nginx -o yaml > first.yaml
+vim first.yaml
+
+...Delete the existing deployment
+kubectl delete deployment nginx
+
+...Create the deployment again this time using the file
+kubectl create -f first.yaml
+
+...look at the yaml output of this iteration
+kubectl get deployment nginx -o yaml > second.yaml
+diff first.yaml second.yaml
+
+...generating useful yaml or json
+kubectl create deployment two --image=nginx --dry-run=client -o yaml
+
+kubectl get deployment
+
+...viewing existing objects in a ready to use yaml
+kubectl get deployments nginx -o yaml
+kubectl get deployment nginx -o json
+
+...create service to view nginx default welcome page
+kubectl expose -h
+kubectl expose deployment/nginx
+
+...edit deployment file
+vim first.yaml
+{
+    spec:
+    containers:
+    - image: nginx
+      imagePullPolicy: Always
+      name: nginx
+      ports:      # Add these
+      - containerPort: 80     # three
+        protocol: TCP     # lines
+      resources: {}
+}
+
+...replace deployment
+kubectl replace -f first.yaml --force
+
+...view pod and deployment
+kubectl get deploy,pod
+
+...try to expose the resource again
+kubectl expose deployment/nginx
+
+...verify the service configuration (CLUSTERIP is different to EndPoint)
+kubectl get svc nginx (gives clusterip)
+kubectl get ep nginx (gives endpoint)
+
+...test access on clusterip and endpoint
+curl 10.107.35.123:80
+curl 192.168.1.103:80
+
+...scale up deployment from 1 to 3 web servers
+kubectl get deployment nginx
+kubectl scale deployment nginx --replicas=3
+kubectl get deployment nginx
+
+...view endpoints
+kubectl get ep nginx
+
+...view and delete the oldest pod
+kubectl get pod -o wide
+kubectl delete pod nginx-7769f8f85b-4xzhc
+
+...view pods again
+kubectl get po
+
+...view the endpoints again
+kubectl get ep nginx

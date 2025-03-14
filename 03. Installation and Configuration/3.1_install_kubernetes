@@ -1,0 +1,107 @@
+---resource download---
+wget https://cm.lf.training/LFS258/LFS258_V2025-03-06_SOLUTIONS.tar.xz --user=LFtraining --password=Penguin2014
+
+tar -xvf LFS258_V2025-03-06_SOLUTIONS.tar.xz
+
+---install kubernetes---
+
+...become root and update and upgrade the system
+sudo -i
+apt-get update && apt-get upgrade -y
+
+...install packages
+apt install apt-transport-https software-properties-common ca-certificates tree socat -y
+
+...disable swap if not already done
+swapoff -a
+
+... load modules to ensure they are available for following steps
+modprobe overlay
+modprobe br_netfilter
+
+...update kernel networking to allow necessary traffic
+cat << EOF | tee /etc/sysctl.d/kubernetes.conf 
+net.bridge.bridge-nf-call-ip6tables = 1 
+net.bridge.bridge-nf-call-iptables = 1 
+net.ipv4.ip_forward = 1 
+EOF
+
+...ensure changes are used by the current kernel as well
+sysctl --system
+
+...install the necessary key for the software to install
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+...Install the containerd software
+apt-get update &&  apt-get install containerd.io -y
+containerd config default | tee /etc/containerd/config.toml
+sed -e 's/SystemdCgroup = false/SystemdCgroup = true/g' -i /etc/containerd/config.toml
+systemctl restart containerd
+
+...Download the public signing key for the Kubernetes package repositories
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+...Add the appropriate Kubernetes apt repository
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+...Update the new repo declared
+apt-get update
+
+...Install the kubernetes software
+apt-get install -y kubeadm=1.31.1-1.1 kubelet=1.31.1-1.1 kubectl=1.31.1-1.1
+apt-mark hold kubelet kubeadm kubectl
+
+...Find the IP address of the primary interfae of the cp server
+hostname -i
+
+...Add local DNS alias for cp server
+vim /etc/hosts
+{
+10.128.0.3 k8scp    #<-- Add this line {replace with ip from previous step}
+10.128.0.3 cp       #<-- Add this line
+127.0.0.1 localhost
+}
+
+...Create configuration file for the cluster
+cp /home/Oluse/LFS258/SOLUTIONS/s_03/kubeadm-config.yaml /root/
+vim kubeadm-config.yaml
+
+...Initialize the cp
+kubeadm init --config=kubeadm-config.yaml --upload-certs --node-name=cp | tee kubeadm-init.out                 #<-- Save output for future review
+
+
+...Configure non-root user admin level access to the cluster
+exit
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+less .kube/config
+
+...install and configure cilium
+find $HOME -name cilium-cni.yaml
+kubectl apply -f /home/Oluse/LFS258/SOLUTIONS/s_03/cilium-cni.yaml
+
+...install auto completion
+sudo apt-get install bash-completion -y
+
+<exit and log back in>
+
+source <(kubectl completion bash)
+echo "source <(kubectl completion bash)" >> $HOME/.bashrc
+
+...test auto completion and explore kubectl command
+kubectl des<Tab> n<Tab><Tab> cp<Tab>
+kubectl -n kube-s<Tab> g<Tab> po<Tab>
+kubectl help
+kubectl help create
+
+...view other values we could have included in the kubeadm-config.yaml file when creating the cluster
+sudo kubeadm config print init-defaults
+
+
+...token generation command
+sudo kubeadm token create --print-join-command

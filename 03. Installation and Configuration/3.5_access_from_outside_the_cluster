@@ -1,0 +1,32 @@
+...get list of pods
+kubectl get po
+
+
+...choose one of the pods and use the exec command to run printenv inside the pod. The following example uses the first pod listed above
+kubectl exec nginx-7769f8f85b-789wl -- printenv |grep KUBERNETES
+
+...Find and then delete the existing service for nginx
+kubectl get svc
+
+...delete the service
+kubectl delete svc nginx
+
+...Create the service again, but this time pass the LoadBalancer type
+kubectl expose deployment nginx --type=LoadBalancer
+kubectl get svc
+
+...Open a browser on your local system, not the lab exercise node, and use the public IP of your node and node port 32753, 
+...shown in the output above.  
+...If running the labs on remote nodes like AWS or GCE use the public IP you used 
+...with PuTTY or SSH to gain access. You may be able to find the IP address using curl
+curl ifconfig.io
+
+...scale up and down the deployment to test
+kubectl scale deployment nginx --replicas=0
+kubectl get po
+kubectl scale deployment nginx --replicas=2
+kubectl get po
+
+...delete deployment and resources
+kubectl delete deployments nginx
+kubectl delete svc nginx
