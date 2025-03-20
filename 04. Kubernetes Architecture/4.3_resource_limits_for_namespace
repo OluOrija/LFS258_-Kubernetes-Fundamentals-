@@ -1,0 +1,96 @@
+---
+
+**Create a new namespace called low-usage-limit**  
+```bash
+kubectl create namespace low-usage-limit
+```
+
+---
+
+**Verify the namespace exists**  
+```bash
+kubectl get namespace
+```
+
+---
+
+**Copy and edit the resource limits YAML file**  
+```bash
+cp /home/Oluse/LFS258/SOLUTIONS/s_04/low-resource-range.yaml .
+vim low-resource-range.yaml
+```
+
+---
+
+**Create the LimitRange object in the new namespace**  
+```bash
+kubectl create -f low-resource-range.yaml -n low-usage-limit
+```
+
+---
+
+**Verify the LimitRange object is created**  
+```bash
+kubectl get LimitRange
+kubectl get LimitRange --all-namespaces
+```
+
+---
+
+**Create a new deployment in the namespace**  
+```bash
+kubectl -n low-usage-limit create deployment limited-hog --image vish/stress
+```
+
+---
+
+**List all deployments across namespaces**  
+```bash
+kubectl get deployments --all-namespaces
+```
+
+---
+
+**View all pods within the namespace**  
+```bash
+kubectl -n low-usage-limit get pods
+```
+
+---
+
+**Get detailed information about the pod in YAML format**  
+```bash
+kubectl -n low-usage-limit get pod limited-hog-<Tab>> -o yaml
+```
+
+---
+
+**Copy and edit the original hog deployment file to add namespace**  
+```bash
+cp hog.yaml hog2.yaml
+vim hog2.yaml
+```
+
+---
+
+**Create the new hog deployment in the namespace**  
+```bash
+kubectl create -f hog2.yaml
+```
+
+---
+
+**View all deployments to confirm the new one is created**  
+```bash
+kubectl get deployments --all-namespaces
+```
+
+---
+
+**Delete the hog deployments to free system resources**  
+```bash
+kubectl -n low-usage-limit delete deployment hog limited-hog
+kubectl delete deployment hog
+```
+
+---

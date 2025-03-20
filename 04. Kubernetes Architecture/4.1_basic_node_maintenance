@@ -1,0 +1,170 @@
+#####################################
+##### Basic Node Maintenance 
+#####################################
+
+
+##### Backup The etcd Database #####
+
+...Find the data directory of the etcd daemon.
+sudo grep data-dir /etc/kubernetes/manifests/etcd.yaml
+
+...Log into the etcd container and look at the optionsetcdctlprovides.
+kubectl -n kube-system exec -it etcd-<Tab> -- sh
+
+## etcdctl -h
+## cd /etc/kubernetes/pki/etcd
+## echo *
+#### ca.crt ca.key healthcheck-client.crt healthcheck-client.key peer.crt peer.key server.crt server.key
+
+## exit
+
+...Check the health of the database using the loopback IP and port 2379
+kubectl -n kube-system exec -it etcd-cp -- sh \
+-c "ETCDCTL_API=3 \
+ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt \
+ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt \
+ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key \
+etcdctl endpoint health"
+
+...Determine how many databases are part of the cluster. 
+kubectl -n kube-system exec -it etcd-cp -- sh \
+-c "ETCDCTL_API=3 \
+ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt \
+ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt \
+ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key \
+etcdctl --endpoints=https://127.0.0.1:2379 member list"
+
+...You can also view the status of the cluster in a table format, among others passed with the-woption.
+kubectl -n kube-system exec -it etcd-cp -- sh \
+-c "ETCDCTL_API=3 \
+ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt \
+ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt \
+ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key \
+etcdctl --endpoints=https://127.0.0.1:2379 member list -w table"
+
+...Now that we know how many etcd databases are in the cluster, and their health, we can back it up. Use thesnapshotargument to save the snapshot into the container data directory /var/lib/etcd/
+kubectl -n kube-system exec -it etcd-cp -- sh \
+-c "ETCDCTL_API=3 \
+ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt \
+ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt \
+ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key \
+etcdctl --endpoints=https://127.0.0.1:2379 snapshot save /var/lib/etcd/snapshot.db"
+
+#### Snapshot saved at /avr/lib/etcd/snapshot.db
+
+...Verify the snapshot exists from the node perspective
+sudo ls -l /var/lib/etcd/
+
+...Backup the snapshot as well as other information used to create the cluster both locally as well as another system incase the node becomes unavailable.
+mkdir $HOME/backup
+sudo cp /var/lib/etcd/snapshot.db $HOME/backup/snapshot.db-$(date +%m-%d-%y)
+sudo cp /root/kubeadm-config.yaml $HOME/backup/
+sudo cp -r /etc/kubernetes/pki/etcd $HOME/backup
+
+...Any mistakes during restore may render the cluster unusable. Instead of issues, and having to rebuild the cluster, pleaseattempt a database restore after the final lab exercise of the course.  More on the restore process can be found here:
+...https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#restoring-an-etcd-cluster
+
+
+
+##### Upgrade the Cluster #####
+
+...Begin by updating the package metadata for APT
+sudo apt update
+
+...Replace the apt repository definition so that apt points to the new repository instead of the Google-hosted repository.
+sudo sed -i 's/31/32/g' /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+
+...View the available packages.
+sudo apt-cache madison kubeadm
+
+...Remove the hold onkubeadmand update the package
+sudo apt-mark unhold kubeadm
+sudo apt-get install -y kubeadm=1.32.3-1.1
+
+...Hold the package again to prevent updates along with other software.
+sudo apt-mark hold kubeadm
+
+...Verify the version ofKubeadm.
+sudo kubeadm version
+
+...To prepare the cp node for update we first need to evict as many pods as possible.
+kubectl drain cp --ignore-daemonsets
+
+...Use the upgrade plan argument to check the existing cluster and then update the software.
+sudo kubeadm upgrade plan
+
+...We are now ready to actually upgrade the software. There will be a lot of output. Be aware the command will ask if you want to proceed with the upgrade, answer y for yes.  Take a moment and look for any errors or suggestions, such as upgrading the version of etcd, or some other package.
+sudo kubeadm upgrade apply v1.32.3
+
+...Check the status of the nodes.
+kubectl get node
+
+...Release the hold on kubelet and kubectl.
+sudo apt-mark unhold kubelet kubectl
+
+...Upgrade both packages to the same version as kubeadm.
+sudo apt-get install -y kubelet=1.32.3-1.1 kubectl=1.32.3-1.1
+
+...Again add the hold so other updates don’t update the Kubernetes software.
+sudo apt-mark hold kubelet kubectl
+
+...Restart the daemons.
+sudo systemctl daemon-reload
+
+sudo systemctl restart kubelet
+
+...Verify the cp node has been updated to the new version.
+kubectl get node
+
+...Now make the cp available for the scheduler, again change the name to match the cluster node name on your control plane.
+kubectl uncordon cp
+
+...Verify the cp now shows a Ready status.
+kubectl get node
+
+#### On worker node ####
+...Now update the worker node(s) of the cluster. ## Open a second terminal session to the worker.
+sudo apt-mark unhold kubeadm
+
+...Replace the apt repository definition so that apt points to the new repository instead of the Google-hosted repository.
+sudo sed -i 's/31/32/g' /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+
+...View the available packages
+sudo apt-cache madison kubeadm
+
+...Update the kubeadm package to the same version as the cp node.
+sudo apt-get update && sudo apt-get install -y kubeadm=1.32.3-1.1
+
+...Hold the package again.
+sudo apt-mark hold kubeadm
+
+#### On control plane node ####
+...Back on the cp terminal session drain the worker node, but allow the daemonsets to remain.
+kubectl drain worker --ignore-daemonsets
+
+#### On worker node ####
+...Return to the worker node and download the updated node configuration.
+sudo kubeadm upgrade node
+
+...Remove the hold on the software then update to the same version as set on the cp.
+sudo apt-mark unhold kubelet kubectl
+sudo apt-get install -y kubelet=1.32.3-1.1 kubectl=1.32.3-1.1
+
+...Ensure the packages don’t get updated when along with regular updates.
+sudo apt-mark hold kubelet kubectl
+
+...Restart daemon processes for the software to take effect.
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+
+#### On control plane node ####
+...Return to the cp node. View the status of the nodes. Notice the worker status.
+kubectl get node
+
+...Allow pods to be deployed to the worker node. Remember to use YOUR worker name. TAB can be helpful to enter the name if command line completion is enabled
+kubectl uncordon worker
+
+...Verify the nodes both show a Ready status and the same upgraded version.
+kubectl get nodes

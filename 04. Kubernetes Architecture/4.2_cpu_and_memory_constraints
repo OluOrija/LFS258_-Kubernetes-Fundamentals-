@@ -1,0 +1,38 @@
+...Use a container called stress, in a deployment which we will name hog, to generate load. Verify you have the container running
+kubectl create deployment hog --image vish/stress
+kubectl get deployments
+
+...Use the describe argument to view details, then view the output in YAML format.
+kubectl describe deployment hog
+kubectl get deployment hog -o yaml
+
+...We will use the YAML output to create our own configuration file.
+kubectl get deployment hog -o yaml > hog.yaml
+
+...Probably good to remove the status output, creationTimestampand other settings. We will also add in memory limits found below.
+vim hog.yaml
+
+...Replace the deployment using the newly edited file.
+kubectl replace -f hog.yaml
+
+...Verify the change has been made. The deployment should now show resource limits.
+kubectl get deployment hog -o yaml
+
+...View the stdio of the hog container. Note how much memory has been allocated.
+kubectl get po
+
+kubectl logs hog-<Tab>
+
+...Open multiple terminals and monitor resource usage  
+kubectl get events
+
+...Edit the deployment to add CPU and memory consumption arguments
+vim hog.yaml
+
+...Delete and recreate the deployment to apply resource settings
+kubectl delete deployment hog
+kubectl create -f hog.yaml
+
+...Check if the pod is running and consuming resources
+kubectl get pod
+kubectl logs hog-<Tab>
