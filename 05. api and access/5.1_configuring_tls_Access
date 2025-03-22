@@ -1,0 +1,58 @@
+1. **View the Kubernetes configuration file:**
+   ```sh
+   less $HOME/.kube/config
+   ```
+
+2. **Extract and set the client certificate data:**
+   ```sh
+   export client=$(grep client-cert $HOME/.kube/config | cut -d" " -f 6)
+   echo $client
+   ```
+
+3. **Extract and set the client key data:**
+   ```sh
+   export key=$(grep client-key-data $HOME/.kube/config | cut -d" " -f 6)
+   echo $key
+   ```
+
+4. **Extract and set the certificate authority data:**
+   ```sh
+   export auth=$(grep certificate-authority-data $HOME/.kube/config | cut -d" " -f 6)
+   echo $auth
+   ```
+
+5. **Decode and save the certificates for use with `curl`:**
+   ```sh
+   echo $client | base64 -d - > ./client.pem
+   echo $key | base64 -d - > ./client-key.pem
+   echo $auth | base64 -d - > ./ca.pem
+   ```
+
+6. **Retrieve the API server URL from the Kubernetes config file:**
+   ```sh
+   kubectl config view | grep server
+   ```
+
+7. **Use `curl` to connect to the API server and list pods:**
+   ```sh
+   curl --cert ./client.pem \
+        --key ./client-key.pem \
+        --cacert ./ca.pem \
+        https://k8scp:6443/api/v1/pods
+   ```
+
+8. **Copy and edit a JSON file to create a new pod:**
+   ```sh
+   cp /home/Oluse/LFS258/SOLUTIONS/s_05/curlpod.json .
+   vim curlpod.json
+   ```
+
+9. **Use `curl` to create a new pod using the API server:**
+   ```sh
+   curl --cert ./client.pem --key ./client-key.pem --cacert ./ca.pem https://k8scp:6443/api/v1/namespaces/default/pods -XPOST -H 'Content-Type: application/json' -d @curlpod.json
+   ```
+
+10. **Verify that the pod was created successfully:**
+   ```sh
+   kubectl get pods
+   ```
