@@ -1,0 +1,58 @@
+---
+
+### 🔹 **Step 1 – View Help for kubectl proxy**
+
+```bash
+kubectl proxy -h
+```
+
+**Annotation**:  
+Displays help information for `kubectl proxy`, explaining its usage and available options.
+
+---
+
+### 🔹 **Step 2 – Start the Proxy with API Prefix (in the background)**
+
+```bash
+kubectl proxy --api-prefix=/ &
+```
+
+**Annotation**:  
+Starts the Kubernetes proxy server in the background. The `--api-prefix=/` option ensures it forwards all paths from `/` to the Kubernetes API server. The process ID will be displayed, which you'll need later to stop it.
+
+> Example output: `[1] 22500`
+
+---
+
+### 🔹 **Step 3 – Make a curl Request via the Proxy**
+
+```bash
+curl http://127.0.0.1:8001/api/
+```
+
+**Annotation**:  
+Makes a GET request to the Kubernetes API server through the proxy. This should return a list of resources available in the core API.
+
+---
+
+### 🔹 **Step 4 – List Namespaces via the Proxy**
+
+```bash
+curl http://127.0.0.1:8001/api/v1/namespaces
+```
+
+**Annotation**:  
+Requests a list of all namespaces through the proxy. This should **succeed**, unlike the direct request from Exercise 6.1, because the proxy uses the user’s local kubeconfig context, which likely has more permissions.
+
+---
+
+### 🔹 **Step 5 – Stop the Proxy**
+
+```bash
+kill 22500
+```
+
+**Annotation**:  
+Stops the background `kubectl proxy` process using its process ID. Replace `22500` with your actual PID if it differs.
+
+---

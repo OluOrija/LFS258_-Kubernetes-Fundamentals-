@@ -1,0 +1,66 @@
+---
+
+### **Job Commands**
+```bash
+cp /home/Oluse/LFS258/SOLUTIONS/s_06/job.yaml .
+vim job.yaml
+kubectl create -f job.yaml
+kubectl get job
+kubectl describe jobs.batch sleepy
+kubectl get jobs.batch sleepy -o yaml
+kubectl delete jobs.batch sleepy
+kubectl get pods
+kubectl delete jobs.batch sleepy
+```
+
+### **YAML Modifications for Jobs**
+In `job.yaml`, you modify the YAML with the following lines (add/edit accordingly):
+
+```yaml
+spec:
+  completions: 5           # Added to specify number of completions
+  parallelism: 2           # Run 2 pods in parallel
+  activeDeadlineSeconds: 15  # Stop the job after 15 seconds
+```
+
+And also update the sleep time:
+```yaml
+args: ["5"]
+```
+
+---
+
+### **CronJob Commands**
+```bash
+cp /home/student/LFS258/SOLUTIONS/s_06/cronjob.yaml .
+vim cronjob.yaml
+kubectl create -f cronjob.yaml
+kubectl get cronjobs.batch
+kubectl get jobs.batch
+kubectl delete cronjobs.batch sleepy
+```
+
+### **YAML Modifications for CronJob**
+In `cronjob.yaml`, update or ensure the following:
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sleepy
+spec:
+  schedule: "*/2 * * * *"
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 10   # To limit job run time
+      template:
+        spec:
+          containers:
+          - name: resting
+            image: busybox
+            command: ["/bin/sleep"]
+            args: ["30"]
+          restartPolicy: Never
+```
+
+---
