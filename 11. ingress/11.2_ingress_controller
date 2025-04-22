@@ -1,0 +1,55 @@
+# Add NGINX Ingress Helm repository
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+# Update Helm repositories to fetch latest charts
+helm repo update
+
+# Download NGINX Ingress Helm chart
+helm fetch ingress-nginx/ingress-nginx --untar
+
+# Navigate to chart directory
+cd ingress-nginx
+
+# Modify controller type from Deployment to DaemonSet
+vim values.yaml  # Edit line: kind: DaemonSet
+
+# Install NGINX Ingress controller using local chart
+helm install myingress .
+
+# Verify no existing ingress rules
+kubectl get ingress --all-namespaces
+
+# Monitor ingress controller service initialization
+kubectl --namespace default get services -o wide -w myingress-ingress-nginx-controller
+
+# Check running ingress controller pods
+kubectl get pod --all-namespaces | grep nginx
+
+# Create ingress routing rules from YAML
+kubectl create -f ingress.yaml
+
+# Test ingress without host header (expect 404)
+curl 192.168.219.118
+
+# Validate host-based routing with header
+curl -H "Host: www.external.com" http://10.104.227.79
+
+# Inject Linkerd sidecar into ingress controller
+kubectl get ds myingress-ingress-nginx-controller -o yaml | linkerd inject --ingress - | kubectl apply -f -
+
+# Add second host rule to ingress configuration
+kubectl edit ingress ingress-test  # Add internal.org -> web-two mapping
+
+# Test new host routing configuration
+curl -H "Host: internal.org" http://10.128.0.7/
+
+# Customize web server content in target pod
+kubectl exec -it web-two-<TAB> -- /bin/bash
+apt-get update && apt-get install vim -y
+vim /usr/share/nginx/html/index.html  # Edit title to "Internal Welcome Page"
+
+# Verify custom content through ingress
+curl -H "Host: internal.org" http://10.128.0.7/
+
+# Monitor traffic patterns in Linkerd dashboard
+linkerd viz top daemonset/myingress-ingress-nginx-controller

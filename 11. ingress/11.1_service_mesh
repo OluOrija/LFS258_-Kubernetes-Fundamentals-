@@ -1,0 +1,55 @@
+# Install Linkerd CLI and add to PATH
+curl -sL run.linkerd.io/install-edge | sh
+export PATH=$PATH:/home/student/.linkerd2/bin
+echo "export PATH=$PATH:/home/student/.linkerd2/bin" >> $HOME/.bashrc
+
+# Verify cluster meets Linkerd prerequisites
+linkerd check --pre
+
+# Install Linkerd CRDs and control plane
+linkerd install --crds | kubectl apply -f -
+linkerd install | kubectl apply -f -
+
+# Validate Linkerd installation
+linkerd check
+
+# Install Linkerd visualization components (dashboard)
+linkerd viz install | kubectl apply -f -
+linkerd viz check
+
+# Start Linkerd dashboard in background
+linkerd viz dashboard &
+
+# Modify dashboard deployment to allow external access
+kubectl -n linkerd-viz edit deploy web
+
+# Expose dashboard via NodePort on port 31500
+kubectl edit svc web -n linkerd-viz
+
+# Retrieve public IP for dashboard access
+curl ifconfig.io
+
+# Verify namespace exists for application deployment
+kubectl get ns accounting
+
+# Label node for pod scheduling constraints
+kubectl label node <worker_node_name> system=secondOne
+
+# Validate/correct deployment configuration
+vim nginx-one.yaml
+
+# Redeploy application to accounting namespace
+kubectl apply -f nginx-one.yaml
+
+# Inject Linkerd sidecar into deployment
+kubectl -n accounting get deploy nginx-one -o yaml | linkerd inject - | kubectl apply -f -
+
+# Generate traffic to populate service mesh metrics
+kubectl -n accounting get svc
+curl 10.102.8.205
+
+# Scale deployment to test mesh observability
+kubectl -n accounting scale deploy nginx-one --replicas=5
+
+# Trigger additional traffic for load balancing visualization
+curl 10.102.8.205

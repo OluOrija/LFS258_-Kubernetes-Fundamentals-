@@ -1,0 +1,31 @@
+```bash
+# Generate a Deployment YAML manifest using an imperative command for a deployment named 'webserver'
+# with the nginx:1.22.1 image and 2 replicas. The --dry-run=client flag prevents actual creation, 
+# and the output is saved to a file named dep.yaml
+kubectl create deploy webserver --image nginx:1.22.1 --replicas=2 --dry-run=client -o yaml | tee dep.yaml
+```
+
+```bash
+# Display the contents of the newly created YAML file to verify its structure
+cat dep.yaml
+```
+
+```bash
+# Create the Deployment in the Kubernetes cluster using the dep.yaml manifest
+kubectl create -f dep.yaml
+```
+
+```bash
+# Retrieve and display the status of all Deployments to confirm that the 'webserver' deployment is running with 2 pods
+kubectl get deploy
+```
+
+```bash
+# List all Pods in the default namespace to verify the creation of two Pods under the 'webserver' deployment
+kubectl get pod
+```
+
+```bash
+# Check the container image used in one of the created Pods by filtering the 'Image:' line from the pod description
+kubectl describe pod webserver-6cbc654ddc-lssbm | grep Image:
+```

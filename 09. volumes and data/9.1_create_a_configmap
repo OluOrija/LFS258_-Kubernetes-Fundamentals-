@@ -1,0 +1,90 @@
+---
+
+### 🔹 **Step 1: Create a directory and populate it with files**
+```bash
+# Create a directory named 'primary'
+mkdir primary
+```
+
+```bash
+# Create a file named 'cyan' with the content 'c'
+echo c > primary/cyan
+```
+
+```bash
+# Create a file named 'magenta' with the content 'm'
+echo m > primary/magenta
+```
+
+```bash
+# Create a file named 'yellow' with the content 'y'
+echo y > primary/yellow
+```
+
+```bash
+# Create a file named 'black' with the content 'k'
+echo k > primary/black
+```
+
+```bash
+# Append the text 'known as key' to the file 'black'
+echo "known as key" >> primary/black
+```
+
+```bash
+# Create a file named 'favorite' with the content 'blue'
+echo blue > favorite
+```
+
+---
+
+### 🔹 **Step 2: Create a ConfigMap**
+```bash
+# Create a ConfigMap named 'colors' from a literal value, and files 'favorite' and contents of the 'primary' directory
+kubectl create configmap colors \
+--from-literal=text=black \
+--from-file=./favorite \
+--from-file=./primary/
+```
+
+---
+
+### 🔹 **Step 3: View the ConfigMap**
+```bash
+# Display basic information about the 'colors' ConfigMap
+kubectl get configmap colors
+```
+
+```bash
+# Display the contents of the 'colors' ConfigMap in YAML format
+kubectl get configmap colors -o yaml
+```
+
+---
+
+### 🔹 **Step 4: Prepare and update Pod manifest**
+```bash
+# Copy the sample Pod manifest file from the solutions directory to the current directory
+cp /home/student/LFS258/SOLUTIONS/s_09/simpleshell.yaml .
+```
+
+```bash
+# Edit the Pod manifest file to define an environment variable from the ConfigMap
+vim simpleshell.yaml
+```
+(Inside the file, an environment variable `ilike` is set using the key `favorite` from the `colors` ConfigMap.)
+
+---
+
+### 🔹 **Step 5: Create and interact with the Pod**
+```bash
+# Create a Pod from the 'simpleshell.yaml' manifest
+kubectl create -f simpleshell.yaml
+```
+
+```bash
+# Execute a command in the running Pod to print the value of the 'ilike' environment variable
+kubectl exec shell-demo -- /bin/bash -c 'echo $ilike'
+```
+
+---

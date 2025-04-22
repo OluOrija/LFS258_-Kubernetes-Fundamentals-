@@ -1,0 +1,66 @@
+# Copy Pod template for DNS testing tool
+cp /home/student/LFS258/SOLUTIONS/s_10/nettool.yaml .
+
+# Edit Pod configuration to create Ubuntu test container
+vim nettool.yaml
+
+# Create Ubuntu troubleshooting Pod
+kubectl create -f nettool.yaml
+
+# Access interactive shell in Ubuntu Pod
+kubectl exec -it ubuntu -- /bin/bash
+
+# Install network diagnostics tools in container
+apt-get update ; apt-get install curl dnsutils -y
+
+# Perform DNS resolution test with default settings
+dig
+
+# View container's DNS resolver configuration
+cat /etc/resolv.conf
+
+# Reverse DNS lookup of CoreDNS service IP
+dig @10.96.0.10 -x 10.96.0.10
+
+# Test FQDN-based service access across namespaces
+curl service-lab.accounting.svc.cluster.local
+
+# Demonstrate namespace-specific DNS resolution failure
+curl service-lab
+
+# Cross-namespace service access using short FQDN
+curl service-lab.accounting
+
+# List system services in kube-system namespace
+kubectl -n kube-system get svc
+
+# Inspect CoreDNS service configuration details
+kubectl -n kube-system get svc kube-dns -o yaml
+
+# Find pods with kube-dns label across all namespaces
+kubectl get pod -l k8s-app --all-namespaces
+
+# Examine CoreDNS pod configuration
+kubectl -n kube-system get pod coredns-f9fd979d6-4dxpl -o yaml
+
+# List Kubernetes configuration maps
+kubectl -n kube-system get configmaps
+
+# Backup CoreDNS configuration
+kubectl -n kube-system get configmaps coredns -o yaml > coredns-backup.yaml
+
+# Edit CoreDNS configuration to add custom rewrite rule
+kubectl -n kube-system edit configmaps coredns
+
+# Force CoreDNS pods to reload updated configuration
+kubectl -n kube-system delete pod coredns-f9fd979d6-s4j98 coredns-f9fd979d6-xlpzf
+
+# Create test deployment and service for DNS validation
+kubectl create deployment nginx --image=nginx
+kubectl expose deployment nginx --type=ClusterIP --port=80
+
+# Update CoreDNS configuration with response rewriting
+kubectl -n kube-system edit configmaps coredns
+
+# Clean up DNS test resources
+kubectl delete -f nettool.yaml

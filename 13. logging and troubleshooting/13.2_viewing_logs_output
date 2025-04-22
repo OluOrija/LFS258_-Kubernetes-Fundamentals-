@@ -1,0 +1,5 @@
+# List all pods across all namespaces (including system components)
+kubectl get po --all-namespaces
+
+# View logs for specific control plane component (API server in this example)
+kubectl -n kube-system logs kube-apiserver-cp

@@ -1,0 +1,86 @@
+# Delete existing deployment to clean up resources
+kubectl delete deploy nginx-nfs
+
+# Remove Persistent Volume Claim (PVC)
+kubectl delete pvc pvc-one
+
+# Delete Persistent Volume (PV)
+kubectl delete pv pvvol-1
+
+# Copy ResourceQuota template to current directory
+cp /home/student/LFS258/SOLUTIONS/s_09/storage-quota.yaml .
+
+# Edit ResourceQuota configuration to set PVC/storage limits
+vim storage-quota.yaml
+
+# Create dedicated namespace for quota testing
+kubectl create namespace small
+
+# Verify namespace details before quota application
+kubectl describe ns small
+
+# Create PV in 'small' namespace (-n for namespace targeting)
+kubectl -n small create -f PVol.yaml
+
+# Create PVC in 'small' namespace
+kubectl -n small create -f pvc.yaml
+
+# Apply ResourceQuota to namespace
+kubectl -n small create -f storage-quota.yaml
+
+# Check quota enforcement in namespace
+kubectl describe ns small
+
+# Modify deployment YAML to make namespace flexible
+vim nfs-pod.yaml
+
+# Create deployment in specific namespace
+kubectl -n small create -f nfs-pod.yaml
+
+# Verify deployment status
+kubectl -n small get deploy
+
+# Check pod operational status
+kubectl -n small get pod
+
+# Inspect pod's volume configuration
+kubectl -n small describe pod nginx-nfs-2854978848-g3khf
+
+# Generate test file to validate storage behavior
+sudo dd if=/dev/zero of=/opt/sfw/bigfile bs=1M count=300
+
+# Delete deployment while preserving storage
+kubectl -n small delete deploy nginx-nfs
+
+# Remove PVC and observe PV state
+kubectl -n small delete pvc pvc-one
+
+# View PV reclaim policy details
+kubectl get pv/pvvol-1 -o yaml
+
+# Recreate PV with updated configuration
+kubectl create -f PVol.yaml
+
+# Dynamically modify PV reclaim policy
+kubectl patch pv pvvol-1 -p '{"spec":{"persistentVolumeReclaimPolicy":"Delete"}}'
+
+# Edit and reapply stricter quota limits
+vim storage-quota.yaml
+
+# Attempt deployment with conflicting quota
+kubectl -n small create -f nfs-pod.yaml
+
+# Force PV deletion when stuck
+kubectl delete pv/pvvol-1
+
+# Modify PV reclaim policy to Recycle
+vim PVol.yaml
+
+# Apply LimitRange for resource constraints
+kubectl -n small create -f low-resource-range.yaml
+
+# Edit quota settings live
+kubectl -n small edit resourcequota
+
+# Final cleanup of all lab resources
+kubectl delete pv pvvol-1

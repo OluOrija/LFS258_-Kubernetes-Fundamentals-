@@ -1,0 +1,54 @@
+# Install HAProxy and Vim on proxy node
+sudo apt-get update ; sudo apt-get install -y haproxy vim
+
+# Configure HAProxy with frontend/backend for Kubernetes API servers
+sudo vim /etc/haproxy/haproxy.cfg  # Add load balancing rules
+
+# Restart HAProxy to apply configuration
+sudo systemctl restart haproxy.service
+
+# Verify HAProxy service status
+sudo systemctl status haproxy.service
+
+# Update DNS alias to point to load balancer on all nodes
+sudo vim /etc/hosts  # Map k8scp to proxy IP
+
+# Get proxy server public IP for dashboard access
+curl ifconfig.io
+
+# Generate cluster join token
+sudo kubeadm token create
+
+# Create certificate hash for secure join
+openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+
+# Prepare certificate key for control plane join
+sudo kubeadm init phase upload-certs --upload-certs
+
+# Join secondary control plane to cluster
+sudo kubeadm join k8scp:6443 --token <TOKEN> --discovery-token-ca-cert-hash sha256:<HASH> --control-plane --node-name=secondcp --certificate-key <CERT_KEY>
+
+# Verify node status after joining
+kubectl get nodes
+
+# Configure kubectl access on new control planes
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# Update HAProxy with all control plane nodes
+sudo vim /etc/haproxy/haproxy.cfg  # Uncomment backend servers
+sudo systemctl restart haproxy.service
+
+# Monitor etcd cluster health
+kubectl -n kube-system exec -it etcd-cp -- /bin/sh
+ETCDCTL_API=3 etcdctl --endpoints <ETCD_ENDPOINTS> --cacert /etc/kubernetes/pki/etcd/ca.crt --cert /etc/kubernetes/pki/etcd/server.crt --key /etc/kubernetes/pki/etcd/server.key endpoint status
+
+# Simulate node failure (leader shutdown)
+sudo systemctl stop containerd.service  # Or reboot with sudo reboot
+
+# Monitor etcd leader election logs
+kubectl -n kube-system logs -f etcd-thirdcp
+
+# Restart failed node and verify recovery
+sudo systemctl start containerd.service

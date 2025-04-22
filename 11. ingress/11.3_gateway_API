@@ -1,0 +1,38 @@
+# Install standard Gateway API CRDs (GatewayClass, Gateway, HTTPRoute etc)
+kubectl kustomize "https://github.com/nginx/nginx-gateway-fabric/config/crd/gateway-api/standard?ref=v1.6.1" | kubectl apply -f -
+
+# Deploy NGINX-specific Custom Resource Definitions (Policies, Proxies)
+kubectl apply -f https://raw.githubusercontent.com/nginx/nginx-gateway-fabric/v1.6.1/deploy/crds.yaml
+
+# Install NGINX Gateway Fabric with default configuration
+kubectl apply -f https://raw.githubusercontent.com/nginx/nginx-gateway-fabric/v1.6.1/deploy/default/deploy.yaml
+
+# Verify NGINX Gateway components in dedicated namespace
+kubectl get all -n nginx-gateway
+
+# Convert LoadBalancer service to NodePort for local cluster access
+kubectl patch service/nginx-gateway -n nginx-gateway -p '{"spec": {"type": "NodePort"}}'
+
+# Deploy sample books application with Service
+kubectl create -f books.yaml
+
+# Verify books deployment and service status
+kubectl get svc/books deploy/books
+
+# Create Gateway resource defining entry point configuration
+kubectl create -f gateway.yaml
+
+# Check Gateway resource adoption status
+kubectl get gateway
+
+# Create HTTPRoute for host-based traffic routing
+kubectl create -f httproute.yaml
+
+# Validate HTTPRoute configuration
+kubectl get httproute
+
+# Test routing with hostname resolution (--resolve maps host to IP:port)
+curl --resolve shop.example.com:32500:10.2.0.30 http://shop.example.com:32500/
+
+# Verify non-matching hostnames return 404 (negative test)
+curl --resolve test.example.com:32500:10.2.0.30 http://test.example.com:32500/

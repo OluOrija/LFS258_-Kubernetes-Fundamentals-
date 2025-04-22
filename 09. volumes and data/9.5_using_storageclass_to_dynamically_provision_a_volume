@@ -1,0 +1,44 @@
+# Check existing StorageClasses in the cluster
+kubectl get sc
+
+# Add Helm repository for NFS subdir provisioner
+helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+
+# Deploy NFS provisioner with server/path configuration
+helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --set nfs.server=cp --set nfs.path=/opt/sfw/
+
+# Verify auto-created StorageClass after provisioner deployment
+kubectl get sc
+
+# Check existing PersistentVolumes (PV) and PersistentVolumeClaims (PVC)
+kubectl get pv,pvc
+
+# Copy StorageClass-based PVC template to current directory
+cp /home/student/LFS258/SOLUTIONS/s_09/pvc-sc.yaml .
+
+# Edit PVC configuration to specify StorageClass and requirements
+vim pvc-sc.yaml
+
+# Create PVC to trigger dynamic volume provisioning
+kubectl create -f pvc-sc.yaml
+
+# Verify PV auto-provisioning and PVC binding status
+kubectl get pv,pvc
+
+# Copy Pod template using StorageClass-backed PVC
+cp /home/student/LFS258/SOLUTIONS/s_09/pod-sc.yaml .
+
+# Edit Pod configuration to mount PVC
+vim pod-sc.yaml
+
+# Create Pod with dynamically provisioned storage
+kubectl create -f pod-sc.yaml
+
+# Create test file for storage verification
+echo "Welcome to the demo of storage class" > index.html
+
+# Copy test file to Pod's persistent storage location
+kubectl cp index.html web-server:/usr/share/nginx/html
+
+# Clean up Pod and PVC (automatically deletes dynamically provisioned PV)
+kubectl delete pod/web-server pvc/pvc-one

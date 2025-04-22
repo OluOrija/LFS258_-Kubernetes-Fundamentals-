@@ -1,0 +1,103 @@
+---
+
+```bash
+# Download Helm v3.15.2 binary for Linux
+wget https://get.helm.sh/helm-v3.15.2-linux-amd64.tar.gz
+```
+
+```bash
+# Extract the downloaded Helm tarball
+tar -xvf helm-v3.15.2-linux-amd64.tar.gz
+```
+
+```bash
+# Copy the Helm binary to /usr/local/bin to make it executable system-wide
+sudo cp linux-amd64/helm /usr/local/bin/helm
+```
+
+```bash
+# Search Helm Hub for charts related to databases
+helm search hub database
+```
+
+```bash
+# Add a Helm chart repository from a third-party vendor (ealenn)
+helm repo add ealenn https://ealenn.github.io/charts
+```
+
+```bash
+# Update local Helm repo index to fetch latest charts
+helm repo update
+```
+
+```bash
+# Install or upgrade a release named 'tester' using the 'ealenn/echo-server' chart with debug output
+helm upgrade -i tester ealenn/echo-server --debug
+```
+
+```bash
+# Get the list of services running in the cluster, including IPs and ports
+kubectl get svc
+```
+
+```bash
+# Send an HTTP request to the ClusterIP of the echo-server service to verify response
+curl 10.98.252.11
+```
+
+```bash
+# List all Helm releases (deployed, failed, or deleted)
+helm list
+```
+
+```bash
+# Uninstall the Helm release named 'tester'
+helm uninstall tester
+```
+
+```bash
+# Find the downloaded Helm chart archive file
+find $HOME -name *echo*
+```
+
+```bash
+# Change to the chart repository directory and extract the chart tarball
+cd $HOME/.cache/helm/repository ; tar -xvf echo-server-*
+```
+
+```bash
+# View the values.yaml file which defines the default configurations for the chart
+cat echo-server/values.yaml
+```
+
+```bash
+# Add Bitnami Helm repository for additional charts
+helm repo add bitnami https://charts.bitnami.com/bitnami
+```
+
+```bash
+# Download and extract the Bitnami Apache Helm chart into a folder
+helm fetch bitnami/apache --untar
+```
+
+```bash
+# Change directory into the extracted Apache chart
+cd apache/
+```
+
+```bash
+# List contents of the Apache chart directory to view available files
+ls
+```
+
+```bash
+# View the values.yaml file of the Apache chart using a pager
+less values.yaml
+```
+
+```bash
+# Install the Apache chart from the current directory with the release name 'anotherweb'
+helm install anotherweb .
+```
+
+---

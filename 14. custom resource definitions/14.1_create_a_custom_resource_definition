@@ -1,0 +1,32 @@
+# List all existing Custom Resource Definitions (CRDs) in the cluster
+kubectl get crd --all-namespaces
+
+# Copy Cilium CNI configuration for CRD reference
+cp /home/student/course/SOLUTIONS/s_03/cilium-cni.yaml .
+
+# Inspect Cilium CRD configuration template
+less cilium-cni.yaml
+
+# Describe specific CRD to view schema details
+kubectl describe crd ciliumcidrgroups.cilium.io
+
+# Copy CRD template for new custom resource
+cp /home/student/course/SOLUTIONS/s_14/crd.yaml .
+
+# Create new Custom Resource Definition in Kubernetes cluster
+kubectl create -f crd.yaml
+
+# Verify CRD creation and inspect its properties
+kubectl get crd
+kubectl describe crd crontabs.stable.example.com
+
+# Create instance of the custom resource
+kubectl create -f new-crontab.yaml
+
+# View custom resource instances using full name and shortName
+kubectl get CronTab
+kubectl get ct  # Short alias defined in CRD
+kubectl describe ct
+
+# Clean up CRD and all associated custom resources
+kubectl delete -f crd.yaml

@@ -1,0 +1,64 @@
+---
+
+```bash
+# View the current update strategy configuration for the 'webserver' Deployment
+# The output includes the update strategy (e.g., RollingUpdate) and its parameters
+kubectl get deploy webserver -o yaml | grep -A 4 strategy
+```
+
+```bash
+# Edit the 'webserver' Deployment configuration directly in the default editor (e.g., vim)
+# Intended to change the update strategy from RollingUpdate to Recreate
+kubectl edit deploy webserver
+```
+
+```bash
+# Update the container image used by the 'webserver' Deployment to nginx:1.23.1-alpine
+# This performs a rolling update and records the change in the rollout history
+kubectl set image deploy webserver nginx=nginx:1.23.1-alpine --record
+```
+
+```bash
+# List all Pods to verify that new Pods have been created as part of the image update
+kubectl get pod
+```
+
+```bash
+# Describe the specific Pod to verify the container image in use (should reflect the updated image)
+kubectl describe po webserver-6cf9cd5c74-qjph4 | grep Image:
+```
+
+```bash
+# View the rollout history for the 'webserver' Deployment
+# This shows the revisions and associated change causes (if any)
+kubectl rollout history deploy webserver
+```
+
+```bash
+# View details of the first revision of the 'webserver' Deployment
+# Helps compare what changed between revisions
+kubectl rollout history deploy webserver --revision=1
+```
+
+```bash
+# View details of the second revision of the 'webserver' Deployment
+# Should reflect the new image set in the recent update
+kubectl rollout history deploy webserver --revision=2
+```
+
+```bash
+# Roll back the 'webserver' Deployment to the previous revision (undo the image update)
+kubectl rollout undo deploy webserver
+```
+
+```bash
+# List all Pods again to verify that the rollback has resulted in older version Pods being recreated
+kubectl get pod
+```
+
+```bash
+# Describe the rolled back Pod to confirm the image has reverted to the previous version (e.g., nginx:1.22.1)
+kubectl describe pod webserver-6cbc654ddc-7wb5q | grep Image:
+```
+
+---

@@ -1,0 +1,32 @@
+# Check kubelet service status and configuration source
+systemctl status kubelet.service
+
+# Inspect kubelet configuration file (cert rotation, static pods path)
+sudo less /var/lib/kubelet/config.yaml
+
+# List control plane component manifests (API server, etcd, scheduler)
+sudo ls /etc/kubernetes/manifests/
+
+# Generate new bootstrap token for node joining
+sudo kubeadm token create
+
+# List cluster secrets (including bootstrap tokens)
+kubectl -n kube-system get secrets
+
+# Inspect bootstrap token secret details (encoded expiration, usage)
+kubectl -n kube-system get secrets bootstrap-token<Tab> -o yaml
+
+# View current cluster configuration (contexts, users, clusters)
+kubectl config view
+
+# Explore credential configuration options
+kubectl config set-credentials -h
+
+# Backup kubeconfig before making changes
+cp $HOME/.kube/config $HOME/cluster-api-config
+
+# Discover cluster configuration management commands
+kubectl config <Tab><Tab>
+
+# View default kubeadm init configuration (security settings, tokens)
+sudo kubeadm config print init-defaults

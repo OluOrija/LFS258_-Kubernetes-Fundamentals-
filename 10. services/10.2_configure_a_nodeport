@@ -1,0 +1,14 @@
+# Expose deployment as NodePort service for external cluster access
+kubectl -n accounting expose deployment nginx-one --type=NodePort --name=service-lab
+
+# Inspect service details to find auto-assigned NodePort (30000-32767 range)
+kubectl -n accounting describe services
+
+# Get Kubernetes control plane endpoint for service access
+kubectl cluster-info
+
+# Test external access using control plane URL and NodePort
+curl http://k8scp:32103
+
+# Discover public IP address for external cluster access testing
+curl ifconfig.io

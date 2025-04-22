@@ -1,0 +1,32 @@
+# Check existing Persistent Volume Claims (PVCs) in the default namespace
+kubectl get pvc
+
+# Copy PVC YAML template to current directory
+cp /home/student/LFS258/SOLUTIONS/s_09/pvc.yaml .
+
+# Edit PVC configuration to define storage requirements and access modes
+vim pvc.yaml
+
+# Create the PVC using the YAML configuration file
+kubectl create -f pvc.yaml
+
+# Verify the PVC status (Bound = successfully claimed a Persistent Volume)
+kubectl get pvc
+
+# Check Persistent Volume (PV) status to confirm binding to the PVC
+kubectl get pv
+
+# Copy deployment YAML template to current directory
+cp /home/student/LFS258/SOLUTIONS/s_09/nfs-pod.yaml .
+
+# Edit deployment YAML to add PVC volume mount configuration
+vim nfs-pod.yaml
+
+# Create the deployment using the edited YAML file
+kubectl create -f nfs-pod.yaml
+
+# List all pods to verify deployment status
+kubectl get pods
+
+# Inspect detailed configuration of the pod (verify volume mounts and PVC usage)
+kubectl describe pod nginx-nfs-1054709768-s8g28

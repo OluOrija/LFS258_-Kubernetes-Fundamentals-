@@ -1,0 +1,8 @@
+# High Availability Steps
+High level steps:
+1.  Deploy a load balancer configured to pass through traffic on your new proxy node.  HAProxy is easy to deploy usingonline documentation. Start with forwarding traffic of the cp alias to just the working cp.
+2.  Install the Kubernetes software on the second and third cp nodes.
+3.  Usekubeadm joinon the second cp, adding it to the cluster as another control plane using the node name.
+4.  Join the third cp as another control plane to the cluster using the node name.
+5.  Update the proxy to use all three cps backend IPs.
+6.  Temporarily shut down the first cp and monitor traffic.

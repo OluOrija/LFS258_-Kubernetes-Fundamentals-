@@ -1,0 +1,14 @@
+# Delete all Pods with specific label across all namespaces
+kubectl delete pods -l system=secondary --all-namespaces
+
+# Verify replacement Pods created by controller (Deployment/ReplicaSet)
+kubectl -n accounting get pods
+
+# Show deployments with their attached labels in namespace
+kubectl -n accounting get deploy --show-labels
+
+# Delete deployment using label selector
+kubectl -n accounting delete deploy -l system=secondary
+
+# Remove node label to clear scheduling constraints
+kubectl label node worker system-

@@ -1,0 +1,93 @@
+---
+
+```bash
+# Display help information for the 'kubectl kustomize' command
+kubectl kustomize --help
+```
+
+```bash
+# Create a directory structure for the Kustomize base and overlays
+mkdir -p myapp/base myapp/overlays/dev myapp/overlays/prod
+```
+
+```bash
+# Display the directory structure using 'tree'
+tree myapp
+```
+
+```bash
+# Copy all base YAML files from the solutions folder into the base directory
+cp /home/student/LFS258/SOLUTIONS/s_08/*.yaml-base myapp/base/
+```
+
+```bash
+# Copy all dev YAML files from the solutions folder into the dev overlay directory
+cp /home/student/LFS258/SOLUTIONS/s_08/*.yaml-dev myapp/overlays/dev/
+```
+
+```bash
+# Copy all prod YAML files from the solutions folder into the prod overlay directory
+cp /home/student/LFS258/SOLUTIONS/s_08/*.yaml-prod myapp/overlays/prod/
+```
+
+```bash
+# Show updated directory structure with all files copied
+tree myapp
+```
+
+```bash
+# Change into the base directory
+cd myapp/base
+```
+
+```bash
+# Rename all *.yaml-base files to remove the '-base' suffix
+for file in *.yaml-base; do mv "$file" "${file/-base/}"; done
+```
+
+```bash
+# List YAML files in the base directory after renaming
+ls *.yaml
+```
+
+```bash
+# Change into the dev overlay directory
+cd ../overlays/dev
+```
+
+```bash
+# Rename all *.yaml-dev files to remove the '-dev' suffix
+for file in *.yaml-dev; do mv "$file" "${file/-dev/}"; done
+```
+
+```bash
+# List YAML files in the dev directory after renaming
+ls *.yaml
+```
+
+```bash
+# Change into the prod overlay directory
+cd ../prod
+```
+
+```bash
+# Rename all *.yaml-prod files to remove the '-prod' suffix
+for file in *.yaml-prod; do mv "$file" "${file/-prod/}"; done
+```
+
+```bash
+# List YAML files in the prod directory after renaming
+ls *.yaml
+```
+
+```bash
+# Return to the home directory
+cd
+```
+
+```bash
+# Display the final verified directory and file structure
+tree myapp
+```
+
+---

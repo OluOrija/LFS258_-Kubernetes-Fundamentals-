@@ -1,0 +1,21 @@
+# View kubelet service logs (node-level Kubernetes agent)
+journalctl -u kubelet | less
+
+# Locate kube-apiserver container logs in filesystem
+sudo find / -name "*apiserver*log"
+
+# Inspect API server container logs directly
+sudo less /var/log/containers/kube-apiserver-cp_kube-system_kube-apiserver-*.log
+
+# Check control plane component logs (non-containerized environments)
+less /var/log/kube-apiserver.log         # Kubernetes API server activity
+less /var/log/kube-scheduler.log         # Scheduling decisions
+less /var/log/kube-controller-manager.log # Controller operations
+
+# Access pod-specific logs through host paths
+ls /var/log/containers/                  # Container runtime logs
+ls /var/log/pods/                        # Pod-level log directories
+
+# Review worker node component logs (non-systemd systems)
+less /var/log/kubelet.log                # Container lifecycle management
+less /var/log/kube-proxy.log             # Service networking and iptables rules

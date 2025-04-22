@@ -1,0 +1,35 @@
+# Copy deployment template for taint testing
+cp /home/student/course/SOLUTIONS/s_12/taint.yaml .
+
+# Create deployment with 8 nginx replicas
+kubectl apply -f taint.yaml
+
+# Check initial pod distribution across nodes
+sudo crictl ps | wc -l  # On control plane
+sudo crictl ps | wc -l  # On worker node
+
+# Remove deployment to reset environment
+kubectl delete deployment taint-deployment
+
+# Apply PreferNoSchedule taint to worker node
+kubectl taint nodes worker bubba=value:PreferNoSchedule
+
+# Redeploy to observe scheduling preference
+kubectl apply -f taint.yaml
+
+# Remove taint and deployment for next test
+kubectl taint nodes worker bubba-
+kubectl delete deployment taint-deployment
+
+# Apply stricter NoSchedule taint to worker node
+kubectl taint nodes worker bubba=value:NoSchedule
+
+# Verify pods avoid tainted node
+kubectl apply -f taint.yaml
+
+# Force pod eviction with NoExecute taint
+kubectl taint nodes worker bubba=value:NoExecute
+
+# Final cleanup: Remove all taints and deployment
+kubectl taint nodes worker bubba-
+kubectl delete deployment taint-deployment

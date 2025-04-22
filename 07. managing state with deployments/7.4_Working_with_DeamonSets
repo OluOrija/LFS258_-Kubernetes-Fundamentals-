@@ -1,0 +1,39 @@
+---
+
+```bash
+# Copy the existing 'rs.yaml' file to create a new DaemonSet YAML configuration file named 'ds.yaml'
+# This provides a base configuration to modify from a ReplicaSet to a DaemonSet
+cp rs.yaml ds.yaml
+```
+
+```bash
+# Open the 'ds.yaml' file in the vim text editor
+# This allows you to edit the file and change the resource kind from ReplicaSet to DaemonSet
+vim ds.yaml
+```
+
+```bash
+# Apply the DaemonSet configuration defined in 'ds.yaml' to the Kubernetes cluster
+# This creates a DaemonSet that will ensure a Pod is running on every node
+kubectl create -f ds.yaml
+```
+
+```bash
+# Get the status of all DaemonSets in the current namespace
+# This shows how many Pods are desired, current, ready, and available, indicating successful rollout
+kubectl get ds
+```
+
+```bash
+# Get a list of all Pods in the cluster
+# This is used to confirm that the DaemonSet has launched one Pod per node
+kubectl get pod
+```
+
+```bash
+# Describe a specific Pod created by the DaemonSet
+# Used to inspect details like the image version, to ensure the correct container image is being used
+kubectl describe pod ds-one-b1dcv | grep Image:
+```
+
+---

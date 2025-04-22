@@ -1,0 +1,44 @@
+# List all cluster nodes and their status
+kubectl get nodes
+
+# Inspect node labels and taints configuration
+kubectl describe nodes | grep -A5 -i label
+kubectl describe nodes | grep -i taint
+
+# Count running containers on control plane and worker nodes
+kubectl get deployments --all-namespaces
+sudo crictl ps | wc -l  # On cp node
+sudo crictl ps | wc -l  # On worker node
+
+# Apply custom scheduling labels to nodes
+kubectl label nodes cp status=vip
+kubectl label nodes worker status=other
+
+# Verify node label assignments
+kubectl get nodes --show-labels
+
+# Create multi-container Pod with node affinity rules
+cp /home/student/LFS258/SOLUTIONS/s_12/vip.yaml .
+vim vip.yaml  # Configure nodeSelector: status: vip
+
+# Deploy VIP Pod and verify node placement
+kubectl create -f vip.yaml
+sudo crictl ps | wc -l  # Check cp node container count
+
+# Remove nodeSelector constraints and redeploy
+kubectl delete pod vip
+vim vip.yaml  # Comment out nodeSelector section
+kubectl create -f vip.yaml  # Now uses default scheduling
+
+# Create workload for 'other' labeled nodes
+cp vip.yaml other.yaml
+sed -i s/vip/other/g other.yaml  # Update Pod name and selector
+vim other.yaml  # Set nodeSelector: status: other
+
+# Deploy 'other' Pod and validate scheduling
+kubectl create -f other.yaml
+sudo crictl ps | wc -l  # Check worker node container count
+
+# Clean up test resources
+kubectl delete pods vip other
+kubectl get pods  # Confirm termination

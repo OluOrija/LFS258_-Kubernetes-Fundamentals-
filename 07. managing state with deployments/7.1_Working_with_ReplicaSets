@@ -1,0 +1,39 @@
+```bash
+# List all existing ReplicaSets in the default namespace
+kubectl get rs
+```
+
+```bash
+# Copy the provided ReplicaSet YAML file from the solutions directory to the current working directory
+cp /home/student/LFS258/SOLUTIONS/s_07/rs.yaml .
+```
+
+```bash
+# Open the ReplicaSet YAML file in the vim text editor for viewing or editing
+vim rs.yaml
+```
+
+```bash
+# Create the ReplicaSet defined in the rs.yaml file
+kubectl create -f rs.yaml
+```
+
+```bash
+# Describe the details of the ReplicaSet named 'rs-one', including pod templates and current status
+kubectl describe rs rs-one
+```
+
+```bash
+# List all Pods in the default namespace to verify which ones were created by the ReplicaSet
+kubectl get pods
+```
+
+```bash
+# Delete the ReplicaSet named 'rs-one' but keep the Pods it created (orphan the Pods)
+kubectl delete rs rs-one --cascade=orphan
+```
+
+```bash
+# Try to describe the ReplicaSet again (expected to fail since it was deleted)
+kubectl describe rs rs-one
+```

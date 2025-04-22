@@ -1,0 +1,80 @@
+---
+
+```bash
+# List local Docker images for nginx to check available versions
+# Helpful when choosing a version for the image update
+sudo docker image ls nginx
+```
+
+```bash
+# Retrieve the DaemonSet configuration and display the update strategy section
+# This allows you to verify the current update strategy (e.g., RollingUpdate)
+kubectl get ds ds-one -o yaml | grep -A 4 Strategy
+```
+
+```bash
+# Open the DaemonSet configuration for editing
+# Modify the update strategy from RollingUpdate to OnDelete to control when Pods are updated
+kubectl edit ds ds-one
+```
+
+```bash
+# Update the container image of the DaemonSet to a newer nginx version using the `set image` command
+# This prepares the DaemonSet for an update while using the OnDelete strategy
+kubectl set image ds ds-one nginx=nginx:1.26-alpine --record
+```
+
+```bash
+# Describe the existing Pod to verify the currently running image version
+# At this point, the image should remain unchanged due to the OnDelete update strategy
+kubectl describe po ds-one-b1dcv | grep Image:
+```
+
+```bash
+# Delete the existing Pod to trigger creation of a new Pod using the updated image
+# This simulates a rollout under the OnDelete update strategy
+kubectl delete po ds-one-b1dcv
+```
+
+```bash
+# List all Pods to confirm that the deleted Pod has been recreated
+# The new Pod should have the updated nginx image version
+kubectl get pod
+```
+
+```bash
+# Describe the new Pod that replaced the deleted one to confirm the updated image version
+kubectl describe pod ds-one-xc86w | grep Image:
+```
+
+```bash
+# Describe the older Pod (not deleted yet) to confirm it still uses the older image version
+# This shows that updates only happen when individual Pods are deleted
+kubectl describe pod ds-one-z31r4 | grep Image:
+```
+
+```bash
+# View the rollout history of the DaemonSet
+# Shows past revisions and the commands used to change them
+kubectl rollout history ds ds-one
+```
+
+```bash
+# View details of the first revision of the DaemonSet
+# Useful for comparing configurations between different revisions
+kubectl rollout history ds ds-one --revision=1
+```
+
+```bash
+# View details of the second revision of the DaemonSet
+# This should show the updated nginx image version
+kubectl rollout history ds ds-one --revision=2
+```
+
+```bash
+# Roll back the DaemonSet to a previous revision (revision 1)
+# Since the OnDelete strategy is still active, existing Pods won’t change until they’re manually deleted
+kubectl rollout undo ds ds-one --to-revision=1
+```
+
+---

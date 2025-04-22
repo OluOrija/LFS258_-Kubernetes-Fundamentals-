@@ -1,0 +1,34 @@
+# Deploy Metrics Server components for cluster metrics collection
+kubectl create -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+# Verify Metrics Server pod deployment status
+kubectl -n kube-system get pods
+
+# Edit Metrics Server deployment to allow insecure TLS (dev environment only)
+kubectl -n kube-system edit deployment metrics-server  # Add --kubelet-insecure-tls flag
+
+# Check Metrics Server logs for initialization errors
+kubectl -n kube-system logs metrics-server-<TAB>
+
+# View resource usage metrics for pods/nodes (after 2-minute warmup)
+kubectl top pod --all-namespaces
+kubectl top nodes
+
+# Test metrics API endpoint using client certificates
+curl --cert ./client.pem --key ./client-key.pem --cacert ./ca.pem https://k8scp:6443/apis/metrics.k8s.io/v1beta1/nodes
+
+# Deploy Kubernetes Dashboard UI
+cp /home/student/LFS258/SOLUTIONS/s_13/dashboard.yaml .
+kubectl create -f dashboard.yaml
+
+# Grant admin privileges to Dashboard service account
+kubectl create clusterrolebinding dashaccess --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard
+
+# Get public IP for Dashboard access
+curl ifconfig.io
+
+# Generate authentication token for Dashboard login
+kubectl create token kubernetes-dashboard -n kubernetes-dashboard
+
+# Retrieve token secret details (alternative method)
+kubectl -n kubernetes-dashboard get secret kubernetes-dashboard-token-<TAB> -o jsonpath="{.data.token}" | base64 --decode

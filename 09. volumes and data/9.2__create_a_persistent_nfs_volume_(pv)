@@ -1,0 +1,76 @@
+```bash
+# Update package lists and install the NFS server on the control plane (cp) node
+sudo apt-get update && sudo apt-get install -y nfs-kernel-server
+```
+
+```bash
+# Create a directory to be shared via NFS
+sudo mkdir /opt/sfw
+```
+
+```bash
+# Set permissions similar to /tmp (world-writable with sticky bit)
+sudo chmod 1777 /opt/sfw/
+```
+
+```bash
+# Create a file inside the shared directory with the content 'software'
+sudo bash -c 'echo software > /opt/sfw/hello.txt'
+```
+
+```bash
+# Open the NFS exports configuration file to add the new export
+sudo vim /etc/exports
+```
+(Add this line inside the file: `/opt/sfw/ *(rw,sync,no_root_squash,subtree_check)`)
+
+```bash
+# Reload the NFS exports to apply the new configuration
+sudo exportfs -ra
+```
+
+```bash
+# Install the NFS client utilities on the worker node
+sudo apt-get -y install nfs-common
+```
+
+```bash
+# Show the shared directories exported by the cp node
+showmount -e cp
+```
+
+```bash
+# Mount the NFS share from the cp node to the /mnt directory on the worker node
+sudo mount cp:/opt/sfw /mnt
+```
+
+```bash
+# List the contents of the mounted NFS directory to verify access
+ls -l /mnt
+```
+
+```bash
+# Copy the sample PersistentVolume manifest YAML file to the current directory on cp node
+cp /home/student/LFS258/SOLUTIONS/s_09/PVol.yaml .
+```
+
+```bash
+# Edit the PersistentVolume manifest to configure it with correct path and server details
+vim PVol.yaml
+```
+(Edit these fields in the YAML file:
+```yaml
+path: /opt/sfw
+server: cp
+```
+)
+
+```bash
+# Create the PersistentVolume resource in the Kubernetes cluster
+kubectl create -f PVol.yaml
+```
+
+```bash
+# Verify that the PersistentVolume was created successfully
+kubectl get pv
+```

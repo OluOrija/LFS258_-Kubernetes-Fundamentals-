@@ -1,0 +1,48 @@
+# Copy deployment YAML template to current directory
+cp /home/student/LFS258/SOLUTIONS/s_10/nginx-one.yaml .
+
+# Edit deployment configuration to define replicas, labels, and port exposure
+vim nginx-one.yaml
+
+# Check node labels to identify scheduling constraints
+kubectl get nodes --show-labels
+
+# Create dedicated namespace for deployment
+kubectl create ns accounting
+
+# Deploy application with configured YAML file
+kubectl create -f nginx-one.yaml
+
+# Monitor pod status in namespace (shows Pending state initially)
+kubectl -n accounting get pods
+
+# Diagnose pod scheduling failure reasons
+kubectl -n accounting describe pod nginx-one-74dd9d578d-fcpmv
+
+# Apply node label to enable pod scheduling
+kubectl label node <worker_node_name> system=secondOne
+
+# Force pod rescheduling by deleting problematic instance
+kubectl -n accounting delete pod nginx-one-74dd9d578d-fcpmv
+
+# Filter pods using specific label selector across namespaces
+kubectl get pods -l system=secondary --all-namespaces
+
+# Expose deployment as ClusterIP service on port 8080
+kubectl -n accounting expose deployment nginx-one
+
+# Verify service endpoints and port mapping
+kubectl -n accounting get ep nginx-one
+
+# Test container port accessibility (demonstrates misconfiguration)
+curl 192.168.1.72:8080
+curl 192.168.1.72:80
+
+# Delete deployment to reconfigure port settings
+kubectl -n accounting delete deploy nginx-one
+
+# Modify deployment to use correct application port (80)
+vim nginx-one.yaml
+
+# Redeploy with corrected configuration
+kubectl create -f nginx-one.yaml

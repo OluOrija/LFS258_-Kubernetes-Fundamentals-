@@ -1,0 +1,48 @@
+# Create namespaces for environment segregation
+kubectl create ns development
+kubectl create ns production
+
+# View current cluster contexts (shows admin access)
+kubectl config get-contexts
+
+# Create Linux user account for developer
+sudo useradd -s /bin/bash DevDan
+sudo passwd DevDan  # Set password to lftr@in
+
+# Generate developer's TLS keypair and CSR
+openssl genrsa -out DevDan.key 2048
+openssl req -new -key DevDan.key -out DevDan.csr -subj "/CN=DevDan/O=development"
+
+# Sign CSR using cluster CA (45-day certificate validity)
+sudo openssl x509 -req -in DevDan.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out DevDan.crt -days 45
+
+# Configure kubectl credentials for DevDan
+kubectl config set-credentials DevDan --client-certificate=DevDan.crt --client-key=DevDan.key
+
+# Create context linking user/namespace/cluster
+kubectl config set-context DevDan-context --cluster=kubernetes --namespace=development --user=DevDan
+
+# Create RBAC Role for development namespace (full pod/deployment access)
+kubectl create -f role-dev.yaml  # role-dev.yaml defines write permissions
+
+# Bind role to user in development namespace
+kubectl create -f rolebind.yaml  # rolebind.yaml links DevDan to developer role
+
+# Verify development namespace access (create/delete pods)
+kubectl --context=DevDan-context get pods
+kubectl --context=DevDan-context create deployment nginx --image=nginx
+kubectl --context=DevDan-context delete deploy nginx
+
+# Create restricted Role for production (read-only access)
+kubectl create -f role-prod.yaml  # role-prod.yaml defines get/list/watch
+
+# Bind restricted role in production namespace
+kubectl create -f rolebindprod.yaml  # rolebindprod.yaml applies to production
+
+# Create production context and test access
+kubectl config set-context ProdDan-context --cluster=kubernetes --namespace=production --user=DevDan
+kubectl --context=ProdDan-context get pods  # Should work
+kubectl --context=ProdDan-context create deployment nginx --image=nginx  # Should fail
+
+# Inspect production role configuration
+kubectl -n production describe role dev-prod

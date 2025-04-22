@@ -1,0 +1,2 @@
+# Inspect enabled admission control plugins in API server configuration
+sudo grep admission /etc/kubernetes/manifests/kube-apiserver.yaml
